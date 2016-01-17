@@ -2,16 +2,17 @@ extern crate hyper;
 extern crate serde_json;
 
 use hyper::client::Client;
+use hyper::header::UserAgent;
 use serde_json::Value;
 
 pub struct Reddit {
-    user_agent: String,
+    user_agent: UserAgent
 }
 
 impl Reddit {
     pub fn new(user_agent: &str) -> Reddit {
         Reddit {
-            user_agent: user_agent.to_string()
+            user_agent: UserAgent(user_agent.to_string())
         }
     }
 
@@ -25,7 +26,7 @@ impl Reddit {
 
 pub struct Subreddit {
     name: String,
-    user_agent: String
+    user_agent: UserAgent
 }
 
 impl Subreddit {
@@ -34,7 +35,9 @@ impl Subreddit {
 
         let client = Client::new();
 
-        let res = client.get(&format!("https://reddit.com/r/{}/comments.json", self.name)).send().unwrap();
+        let res = client.get(&format!("https://reddit.com/r/{}/comments.json", self.name))
+            .header(self.user_agent.clone())
+            .send().unwrap();
 
         let api_data: Value = serde_json::from_reader(res).unwrap();
         for api_comment in api_data.search("children").unwrap().as_array().unwrap() {
@@ -48,7 +51,9 @@ impl Subreddit {
         let mut submissions = Vec::new();
         let client = Client::new();
 
-        let res = client.get(&format!("https://reddit.com/r/{}/hot.json", self.name)).send().unwrap();
+        let res = client.get(&format!("https://reddit.com/r/{}/hot.json", self.name))
+            .header(self.user_agent.clone())
+            .send().unwrap();
 
         let api_data: Value = serde_json::from_reader(res).unwrap();
         for api_submission in api_data.search("children").unwrap().as_array().unwrap() {
